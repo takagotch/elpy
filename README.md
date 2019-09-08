@@ -34,18 +34,42 @@ class TestJSONRPCServer(unittest.TestCase):
 
 class TestInit(TestJSONRPCServer):
   def test_should_use_arguments(self):
+    self.assertEqual(self.rpc.stdin, self.stdin)
+    self.assertEqual(self.rpc.stdout, self.stdout)
   
   def test_should_default_to_sys(self):
+    testrpc = rpc.JSONRPCServer()
+    self.assertEqual(sys.stdin, testrpc.stdin)
+    self.assertEqual(sys.stdout, testrpc.stdout)
 
 class TestReadJson(TestJSONRPCServer):
   def test_should_read_json(self):
+    objlist = [{'foo': 'bar'},
+      {'baz': 'qux', 'fnord': 'argl\nbargl'},
+      "beep\r\nbeep\r\nbeep"]
+    self.write("".join[(json.dumps(obj) + "\n")
+      for obj in objlist])
+    for obj in objlist:
+      self.assertEqual(self.rpc.read_json(),
+        obj)
 
   def test_should_raise_eof_on_eof(self):
-  
+    self.assertRaises(EOFError, self.rpc.read_json)
+    
   def test_should_fail_on_malformed_json(self):
-
+    self.write("malformed json\n")
+    self.assertRaises(ValueError,
+      self.rpc.read_json)
+      
 class TestWriteJson(TestJSONRPCServer):
-
+  def test_should_write_json_line(self):
+    objlist = [{'foo': 'bar'},
+      {'baz': 'qux', 'fnord': 'argl\nbargl'},
+      ]
+    for obj in objlist:
+      self.rpc.write_json(**obj)
+      self.assertEqual(json.loads(self.read()),
+        obj)
 
 class TestHandleRequest(TestJSONRPCServer):
   def test_should_fail_if_json_does_not_contain_a_method(self):
